@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} | {{ settings.company_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        operational: '#10b981',
+                        degraded: '#f59e0b',
+                        partial: '#f97316',
+                        major: '#ef4444',
+                        maintenance: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'status:dashboard' %}" class="font-semibold text-xl text-gray-800">
+                        Dashboard
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{% url 'status:index' %}" class="text-sm text-gray-600 hover:text-gray-900" target="_blank">
+                        View Status Page
+                    </a>
+                    <span class="text-sm text-gray-500">{{ request.user.username }}</span>
+                    <a href="{% url 'status:dashboard_logout' %}" class="text-sm text-red-600 hover:text-red-800">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="max-w-6xl mx-auto px-4 mt-4">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg mb-2 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

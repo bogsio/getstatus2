@@ -1,0 +1,118 @@
+{% extends 'status/dashboard/base.html' %}
+
+{% block title %}{{ incident.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'status:dashboard' %}" class="text-sm text-gray-600 hover:text-gray-900">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Incident Header -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded text-sm font-medium
+                        {% if incident.impact == 'critical' %}bg-red-100 text-red-800
+                        {% elif incident.impact == 'major' %}bg-orange-100 text-orange-800
+                        {% elif incident.impact == 'minor' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ incident.get_impact_display }}
+                    </span>
+                    <h1 class="text-xl font-semibold text-gray-900">{{ incident.title }}</h1>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded text-sm font-medium
+                    {% if incident.status == 'resolved' %}bg-green-100 text-green-800
+                    {% elif incident.status == 'monitoring' %}bg-blue-100 text-blue-800
+                    {% elif incident.status == 'identified' %}bg-orange-100 text-orange-800
+                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                    {{ incident.get_status_display }}
+                </span>
+            </div>
+        </div>
+        <div class="px-6 py-4">
+            <div class="text-sm text-gray-500 space-y-1">
+                <p><span class="font-medium">Created:</span> {{ incident.created_at|date:"M d, Y H:i" }}</p>
+                {% if incident.resolved_at %}
+                <p><span class="font-medium">Resolved:</span> {{ incident.resolved_at|date:"M d, Y H:i" }}</p>
+                {% endif %}
+                {% if incident.services.exists %}
+                <p><span class="font-medium">Affected Services:</span> {{ incident.services.all|join:", " }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if incident.status != 'resolved' %}
+    <!-- Add Update Form -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">Post Update</h2>
+        </div>
+        <form method="post" class="p-6">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label for="id_status" class="block text-sm font-medium text-gray-700 mb-1">
+                    New Status
+                </label>
+                {{ update_form.status }}
+            </div>
+
+            <div class="mb-4">
+                <label for="id_message" class="block text-sm font-medium text-gray-700 mb-1">
+                    Update Message
+                </label>
+                {{ update_form.message }}
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit"
+                    class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    Post Update
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">Timeline</h2>
+        </div>
+        <div class="p-6">
+            <div class="space-y-6">
+                {% for update in incident.updates.all %}
+                <div class="relative pl-6 border-l-2 {% if forloop.last %}border-gray-200{% else %}border-gray-300{% endif %}">
+                    <div class="absolute -left-2 top-0 w-4 h-4 rounded-full
+                        {% if update.status == 'resolved' %}bg-green-500
+                        {% elif update.status == 'monitoring' %}bg-blue-500
+                        {% elif update.status == 'identified' %}bg-orange-500
+                        {% else %}bg-yellow-500{% endif %}">
+                    </div>
+                    <div class="ml-2">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-semibold uppercase
+                                {% if update.status == 'resolved' %}text-green-600
+                                {% elif update.status == 'monitoring' %}text-blue-600
+                                {% elif update.status == 'identified' %}text-orange-600
+                                {% else %}text-yellow-600{% endif %}">
+                                {{ update.get_status_display }}
+                            </span>
+                            <span class="text-sm text-gray-400">{{ update.created_at|date:"M d, H:i" }}</span>
+                        </div>
+                        <p class="text-gray-700">{{ update.message }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center">No updates yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

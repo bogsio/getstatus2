@@ -1,0 +1,142 @@
+{% extends 'status/dashboard/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Status Dashboard</h1>
+    <a href="{% url 'status:dashboard_incident_create' %}"
+        class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium">
+        + New Incident
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Active Incidents -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-4 py-3 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">Active Incidents</h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for incident in active_incidents %}
+            <a href="{% url 'status:dashboard_incident_detail' incident.pk %}"
+                class="block px-4 py-3 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if incident.impact == 'critical' %}bg-red-100 text-red-800
+                            {% elif incident.impact == 'major' %}bg-orange-100 text-orange-800
+                            {% elif incident.impact == 'minor' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ incident.get_impact_display }}
+                        </span>
+                        <span class="ml-2 font-medium text-gray-900">{{ incident.title }}</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        {{ incident.created_at|timesince }} ago
+                    </div>
+                </div>
+                <div class="mt-1 text-sm text-gray-500">
+                    Status: <span class="font-medium">{{ incident.get_status_display }}</span>
+                    {% if incident.services.exists %}
+                    | Affecting: {{ incident.services.all|join:", " }}
+                    {% endif %}
+                </div>
+            </a>
+            {% empty %}
+            <div class="px-4 py-8 text-center text-gray-500">
+                No active incidents
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Services Status -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-4 py-3 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">Services</h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for service in services %}
+            <div class="px-4 py-3" x-data="{ editing: false }">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="font-medium text-gray-900">{{ service.name }}</span>
+                        {% if service.description %}
+                        <p class="text-sm text-gray-500">{{ service.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <template x-if="!editing">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm
+                                    {% if service.status == 'operational' %}text-operational
+                                    {% elif service.status == 'degraded' %}text-degraded
+                                    {% elif service.status == 'partial' %}text-partial
+                                    {% elif service.status == 'major' %}text-major
+                                    {% elif service.status == 'maintenance' %}text-maintenance
+                                    {% endif %}">
+                                    {{ service.get_status_display }}
+                                </span>
+                                <span class="w-3 h-3 rounded-full
+                                    {% if service.status == 'operational' %}bg-operational
+                                    {% elif service.status == 'degraded' %}bg-degraded
+                                    {% elif service.status == 'partial' %}bg-partial
+                                    {% elif service.status == 'major' %}bg-major
+                                    {% elif service.status == 'maintenance' %}bg-maintenance
+                                    {% endif %}">
+                                </span>
+                                <button @click="editing = true" class="ml-2 text-sm text-blue-600 hover:text-blue-800">
+                                    Edit
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="editing">
+                            <form method="post" action="{% url 'status:dashboard_service_status' service.pk %}" class="flex items-center gap-2">
+                                {% csrf_token %}
+                                <select name="status" class="text-sm border border-gray-300 rounded px-2 py-1">
+                                    <option value="operational" {% if service.status == 'operational' %}selected{% endif %}>Operational</option>
+                                    <option value="degraded" {% if service.status == 'degraded' %}selected{% endif %}>Degraded</option>
+                                    <option value="partial" {% if service.status == 'partial' %}selected{% endif %}>Partial Outage</option>
+                                    <option value="major" {% if service.status == 'major' %}selected{% endif %}>Major Outage</option>
+                                    <option value="maintenance" {% if service.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                </select>
+                                <button type="submit" class="text-sm text-green-600 hover:text-green-800">Save</button>
+                                <button type="button" @click="editing = false" class="text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                            </form>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Resolved Incidents -->
+{% if recent_incidents %}
+<div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+    <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="font-semibold text-gray-900">Recently Resolved</h2>
+    </div>
+    <div class="divide-y divide-gray-100">
+        {% for incident in recent_incidents %}
+        <a href="{% url 'status:dashboard_incident_detail' incident.pk %}"
+            class="block px-4 py-3 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        Resolved
+                    </span>
+                    <span class="ml-2 text-gray-900">{{ incident.title }}</span>
+                </div>
+                <div class="text-sm text-gray-500">
+                    {{ incident.resolved_at|timesince }} ago
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
