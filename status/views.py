@@ -92,9 +92,11 @@ def index(request):
     # Active incidents (not resolved)
     active_incidents = Incident.objects.exclude(status='resolved').prefetch_related('updates', 'services')
 
-    # All resolved incidents (ordered by most recent first)
+    # Resolved incidents from the last year
+    one_year_ago = timezone.now() - timedelta(days=365)
     resolved_incidents = Incident.objects.filter(
-        status='resolved'
+        status='resolved',
+        resolved_at__gte=one_year_ago
     ).order_by('-resolved_at').prefetch_related('updates', 'services')
 
     # Calculate overall status

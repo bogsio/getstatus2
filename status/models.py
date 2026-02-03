@@ -4,6 +4,7 @@ from django.db import models
 class SiteSettings(models.Model):
     """Singleton model for site-wide settings."""
     company_name = models.CharField(max_length=100, default="Your Company")
+    company_url = models.URLField(blank=True, default="")
     logo = models.ImageField(upload_to='logo/', blank=True, null=True)
 
     class Meta:
